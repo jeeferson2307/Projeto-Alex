@@ -20,6 +20,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         complemento: body?.complemento ?? '',
         pontoReferencia: body?.pontoReferencia ?? '',
         observacoes: body?.observacoes ?? '',
+        ativo: typeof body?.ativo === 'boolean' ? body.ativo : true,
       },
     })
     return NextResponse.json(cliente)

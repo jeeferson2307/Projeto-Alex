@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Users, Pencil, DollarSign, Search, X, Save, Plus, Trash2, MapPin } from 'lucide-react'
+import { Users, Pencil, DollarSign, Search, X, Save, Plus, MapPin, Upload, Download, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -17,6 +17,8 @@ interface Pagamento {
   dataPagamento: string
   valor: number
   mesReferencia: string
+  formaPagamento?: string
+  comprovanteNome?: string | null
 }
 
 interface Cliente {
@@ -30,19 +32,31 @@ interface Cliente {
   complemento: string
   pontoReferencia: string
   observacoes: string
+  ativo: boolean
   pagamentos: Pagamento[]
 }
+
+const MESES = [
+  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+]
+
+const FORMAS_PAGAMENTO = ['Pix', 'Cartão de crédito', 'Dinheiro']
 
 export function ConsultaClientes() {
   const [clientes, setClientes] = useState<Cliente[]>([])
   const [filtro, setFiltro] = useState('')
+  const [statusFiltro, setStatusFiltro] = useState('ativos')
   const [loading, setLoading] = useState(true)
   const [editOpen, setEditOpen] = useState(false)
   const [pagOpen, setPagOpen] = useState(false)
   const [selected, setSelected] = useState<Cliente | null>(null)
   const [editForm, setEditForm] = useState<any>({})
   const [savingEdit, setSavingEdit] = useState(false)
-  const [pagForm, setPagForm] = useState({ dataPagamento: '', valor: '', mesReferencia: '' })
+  const [pagForm, setPagForm] = useState<any>({
+    mes: '', ano: '', dataPagamento: '', valor: '', formaPagamento: '',
+    comprovante: '', comprovanteNome: '',
+  })
   const [savingPag, setSavingPag] = useState(false)
 
   const fetchClientes = useCallback(async () => {
@@ -60,9 +74,13 @@ export function ConsultaClientes() {
 
   useEffect(() => { fetchClientes() }, [fetchClientes])
 
-  const filtered = (clientes ?? [])?.filter((c: Cliente) =>
-    c?.nome?.toLowerCase()?.includes(filtro?.toLowerCase() ?? '')
-  )
+  const filtered = (clientes ?? [])
+    ?.filter((c: Cliente) => c?.nome?.toLowerCase()?.includes(filtro?.toLowerCase() ?? ''))
+    ?.filter((c: Cliente) => {
+      if (statusFiltro === 'ativos') return c?.ativo !== false
+      if (statusFiltro === 'inativos') return c?.ativo === false
+      return true
+    })
 
   const openEdit = (c: Cliente) => {
     setSelected(c)
@@ -76,6 +94,7 @@ export function ConsultaClientes() {
       complemento: c?.complemento ?? '',
       pontoReferencia: c?.pontoReferencia ?? '',
       observacoes: c?.observacoes ?? '',
+      ativo: c?.ativo !== false,
     })
     setEditOpen(true)
   }
@@ -91,6 +110,7 @@ export function ConsultaClientes() {
           ...(editForm ?? {}),
           valor: parseFloat(editForm?.valor ?? '0'),
           diaPagamento: parseInt(editForm?.diaPagamento ?? '1'),
+          ativo: editForm?.ativo !== false,
         }),
       })
       if (!res?.ok) throw new Error('Erro ao atualizar')
@@ -106,14 +126,27 @@ export function ConsultaClientes() {
 
   const openPagamentos = (c: Cliente) => {
     setSelected(c)
-    setPagForm({ dataPagamento: '', valor: '', mesReferencia: '' })
+    setPagForm({ mes: '', ano: '', dataPagamento: '', valor: '', formaPagamento: '', comprovante: '', comprovanteNome: '' })
     setPagOpen(true)
+  }
+
+  const handleComprovante = (file: File | undefined) => {
+    if (!file) return
+    if (file.size > 3 * 1024 * 1024) {
+      toast.error('Arquivo muito grande (máximo 3MB)')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => {
+      setPagForm((p: any) => ({ ...(p ?? {}), comprovante: reader?.result ?? '', comprovanteNome: file?.name ?? '' }))
+    }
+    reader.readAsDataURL(file)
   }
 
   const savePagamento = async () => {
     if (!selected?.id) return
-    if (!pagForm?.dataPagamento || !pagForm?.valor || !pagForm?.mesReferencia) {
-      toast.error('Preencha todos os campos do pagamento')
+    if (!pagForm?.mes || !pagForm?.ano || !pagForm?.dataPagamento || !pagForm?.valor || !pagForm?.formaPagamento) {
+      toast.error('Preencha mês, ano, data, valor e forma de pagamento')
       return
     }
     setSavingPag(true)
@@ -125,12 +158,15 @@ export function ConsultaClientes() {
           clienteId: selected?.id,
           dataPagamento: pagForm?.dataPagamento,
           valor: parseFloat(pagForm?.valor ?? '0'),
-          mesReferencia: pagForm?.mesReferencia,
+          mesReferencia: `${pagForm?.mes}/${pagForm?.ano}`,
+          formaPagamento: pagForm?.formaPagamento,
+          comprovante: pagForm?.comprovante || null,
+          comprovanteNome: pagForm?.comprovanteNome || null,
         }),
       })
       if (!res?.ok) throw new Error('Erro ao registrar pagamento')
       toast.success('Pagamento registrado!')
-      setPagForm({ dataPagamento: '', valor: '', mesReferencia: '' })
+      setPagForm({ mes: '', ano: '', dataPagamento: '', valor: '', formaPagamento: '', comprovante: '', comprovanteNome: '' })
       fetchClientes()
     } catch (err: any) {
       toast.error(err?.message ?? 'Erro ao registrar pagamento')
@@ -154,22 +190,9 @@ export function ConsultaClientes() {
     return parts?.join(', ') || 'Não informado'
   }
 
-  const meses = [
-    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-  ]
+  const anoAtual = new Date().getFullYear()
+  const anosOptions = [anoAtual - 1, anoAtual, anoAtual + 1]
 
-  const mesAnoOptions = () => {
-    const opts: string[] = []
-    const now = new Date()
-    for (let i = -6; i <= 6; i++) {
-      const d = new Date(now.getFullYear(), now.getMonth() + i, 1)
-      opts.push(`${meses[d.getMonth()]}/${d.getFullYear()}`)
-    }
-    return opts
-  }
-
-  // Get selected client's pagamentos from latest clientes state
   const selectedPagamentos = selected
     ? (clientes?.find((c: Cliente) => c?.id === selected?.id)?.pagamentos ?? [])
     : []
@@ -188,16 +211,28 @@ export function ConsultaClientes() {
         </div>
       </FadeIn>
 
-      {/* Search */}
+      {/* Filtros */}
       <FadeIn delay={0.1}>
-        <div className="relative mb-6 max-w-md">
-          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por nome..."
-            value={filtro}
-            onChange={(e: any) => setFiltro(e?.target?.value ?? '')}
-            className="pl-10"
-          />
+        <div className="mb-6 flex flex-col sm:flex-row gap-3 sm:items-center">
+          <div className="relative max-w-md flex-1">
+            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nome..."
+              value={filtro}
+              onChange={(e: any) => setFiltro(e?.target?.value ?? '')}
+              className="pl-10"
+            />
+          </div>
+          <div className="w-full sm:w-48">
+            <Select value={statusFiltro} onValueChange={(v: string) => setStatusFiltro(v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ativos">Ativos</SelectItem>
+                <SelectItem value="inativos">Inativos</SelectItem>
+                <SelectItem value="todos">Todos</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </FadeIn>
 
@@ -209,6 +244,7 @@ export function ConsultaClientes() {
               <thead>
                 <tr className="bg-muted/50 border-b border-border">
                   <th className="text-left p-4 font-semibold">Nome</th>
+                  <th className="text-left p-4 font-semibold">Status</th>
                   <th className="text-left p-4 font-semibold">Periodicidade</th>
                   <th className="text-left p-4 font-semibold">Valor</th>
                   <th className="text-left p-4 font-semibold">Dia Pgto</th>
@@ -218,13 +254,21 @@ export function ConsultaClientes() {
               </thead>
               <tbody>
                 {loading ? (
-                  <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">Carregando...</td></tr>
+                  <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">Carregando...</td></tr>
                 ) : (filtered?.length ?? 0) === 0 ? (
-                  <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">Nenhum cliente encontrado.</td></tr>
+                  <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">Nenhum cliente encontrado.</td></tr>
                 ) : (
                   filtered?.map((c: Cliente) => (
                     <tr key={c?.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
                       <td className="p-4 font-medium">{c?.nome}</td>
+                      <td className="p-4">
+                        <span className={
+                          'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ' +
+                          (c?.ativo !== false ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700')
+                        }>
+                          {c?.ativo !== false ? 'Ativo' : 'Inativo'}
+                        </span>
+                      </td>
                       <td className="p-4">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
                           {c?.periodicidade}
@@ -289,16 +333,28 @@ export function ConsultaClientes() {
                 <Input type="number" step="0.01" min="0" value={editForm?.valor ?? ''} onChange={(e: any) => setEditForm((p: any) => ({ ...(p ?? {}), valor: e?.target?.value ?? '' }))} />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label>Dia de Pagamento *</Label>
-              <Select value={editForm?.diaPagamento ?? ''} onValueChange={(v: string) => setEditForm((p: any) => ({ ...(p ?? {}), diaPagamento: v }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {Array.from({ length: 31 }, (_, i) => i + 1)?.map((d: number) => (
-                    <SelectItem key={d} value={String(d)}>{d}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Dia de Pagamento *</Label>
+                <Select value={editForm?.diaPagamento ?? ''} onValueChange={(v: string) => setEditForm((p: any) => ({ ...(p ?? {}), diaPagamento: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 31 }, (_, i) => i + 1)?.map((d: number) => (
+                      <SelectItem key={d} value={String(d)}>{d}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Status *</Label>
+                <Select value={editForm?.ativo === false ? 'inativo' : 'ativo'} onValueChange={(v: string) => setEditForm((p: any) => ({ ...(p ?? {}), ativo: v === 'ativo' }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ativo">Ativo</SelectItem>
+                    <SelectItem value="inativo">Inativo</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div className="space-y-3">
               <Label className="text-base font-semibold">Endereço</Label>
@@ -337,7 +393,7 @@ export function ConsultaClientes() {
 
       {/* Pagamentos Modal */}
       <Dialog open={pagOpen} onOpenChange={setPagOpen}>
-        <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[720px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 font-display text-xl">
               <DollarSign size={20} className="text-primary" />
@@ -348,13 +404,24 @@ export function ConsultaClientes() {
           {/* Novo pagamento */}
           <div className="bg-muted/50 rounded-lg p-4 space-y-3 mt-4">
             <h3 className="font-semibold text-sm flex items-center gap-2"><Plus size={16} /> Lançar Novo Pagamento</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="space-y-1">
-                <Label className="text-xs">Mês/Ano Referência</Label>
-                <Select value={pagForm?.mesReferencia ?? ''} onValueChange={(v: string) => setPagForm((p: any) => ({ ...(p ?? {}), mesReferencia: v }))}>
-                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <Label className="text-xs">Ano</Label>
+                <Select value={pagForm?.ano ?? ''} onValueChange={(v: string) => setPagForm((p: any) => ({ ...(p ?? {}), ano: v }))}>
+                  <SelectTrigger><SelectValue placeholder="Ano" /></SelectTrigger>
                   <SelectContent>
-                    {mesAnoOptions()?.map((m: string) => (
+                    {anosOptions?.map((a: number) => (
+                      <SelectItem key={a} value={String(a)}>{a}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Mês</Label>
+                <Select value={pagForm?.mes ?? ''} onValueChange={(v: string) => setPagForm((p: any) => ({ ...(p ?? {}), mes: v }))}>
+                  <SelectTrigger><SelectValue placeholder="Mês" /></SelectTrigger>
+                  <SelectContent>
+                    {MESES?.map((m: string) => (
                       <SelectItem key={m} value={m}>{m}</SelectItem>
                     ))}
                   </SelectContent>
@@ -367,6 +434,39 @@ export function ConsultaClientes() {
               <div className="space-y-1">
                 <Label className="text-xs">Valor Pago (R$)</Label>
                 <Input type="number" step="0.01" min="0" placeholder="0,00" value={pagForm?.valor ?? ''} onChange={(e: any) => setPagForm((p: any) => ({ ...(p ?? {}), valor: e?.target?.value ?? '' }))} />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Forma de Pagamento</Label>
+                <Select value={pagForm?.formaPagamento ?? ''} onValueChange={(v: string) => setPagForm((p: any) => ({ ...(p ?? {}), formaPagamento: v }))}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    {FORMAS_PAGAMENTO?.map((f: string) => (
+                      <SelectItem key={f} value={f}>{f}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Comprovante (opcional)</Label>
+                <div className="flex items-center gap-2">
+                  <label className="flex items-center gap-2 cursor-pointer text-sm border border-input rounded-md px-3 py-2 hover:bg-muted transition-colors flex-1">
+                    <Upload size={14} />
+                    <span className="truncate">{pagForm?.comprovanteNome || 'Selecionar arquivo'}</span>
+                    <input
+                      type="file"
+                      accept="image/*,application/pdf"
+                      className="hidden"
+                      onChange={(e: any) => handleComprovante(e?.target?.files?.[0])}
+                    />
+                  </label>
+                  {pagForm?.comprovanteNome ? (
+                    <Button type="button" size="icon" variant="ghost" onClick={() => setPagForm((p: any) => ({ ...(p ?? {}), comprovante: '', comprovanteNome: '' }))}>
+                      <X size={16} />
+                    </Button>
+                  ) : null}
+                </div>
               </div>
             </div>
             <Button size="sm" onClick={savePagamento} disabled={savingPag} className="gap-2">
@@ -386,7 +486,9 @@ export function ConsultaClientes() {
                     <tr className="bg-muted/50">
                       <th className="text-left p-3 font-semibold">Mês/Ano</th>
                       <th className="text-left p-3 font-semibold">Data Pagamento</th>
+                      <th className="text-left p-3 font-semibold">Forma</th>
                       <th className="text-left p-3 font-semibold">Valor Pago</th>
+                      <th className="text-center p-3 font-semibold">Comprovante</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -394,7 +496,22 @@ export function ConsultaClientes() {
                       <tr key={p?.id} className="border-t border-border/50">
                         <td className="p-3">{p?.mesReferencia}</td>
                         <td className="p-3">{formatDate(p?.dataPagamento)}</td>
+                        <td className="p-3">{p?.formaPagamento || '—'}</td>
                         <td className="p-3 font-mono text-emerald-600 font-medium">{formatCurrency(p?.valor)}</td>
+                        <td className="p-3 text-center">
+                          {p?.comprovanteNome ? (
+                            <a
+                              href={`/api/pagamentos/${p?.id}/comprovante`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-primary hover:underline"
+                            >
+                              <Download size={14} /> Baixar
+                            </a>
+                          ) : (
+                            <span className="text-muted-foreground inline-flex items-center gap-1"><FileText size={14} /> —</span>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>

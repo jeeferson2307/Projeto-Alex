@@ -12,6 +12,9 @@ export async function POST(req: NextRequest) {
         dataPagamento: new Date(body?.dataPagamento ?? new Date()),
         valor: body?.valor ?? 0,
         mesReferencia: body?.mesReferencia ?? '',
+        formaPagamento: body?.formaPagamento ?? '',
+        comprovante: body?.comprovante ?? null,
+        comprovanteNome: body?.comprovanteNome ?? null,
       },
     })
     return NextResponse.json(pagamento, { status: 201 })

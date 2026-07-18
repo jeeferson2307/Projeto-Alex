@@ -7,7 +7,20 @@ export async function GET() {
   try {
     const clientes = await prisma.cliente.findMany({
       orderBy: { nome: 'asc' },
-      include: { pagamentos: { orderBy: { dataPagamento: 'desc' } } },
+      include: {
+        pagamentos: {
+          orderBy: { dataPagamento: 'desc' },
+          select: {
+            id: true,
+            clienteId: true,
+            dataPagamento: true,
+            valor: true,
+            mesReferencia: true,
+            formaPagamento: true,
+            comprovanteNome: true,
+          },
+        },
+      },
     })
     return NextResponse.json(clientes ?? [])
   } catch (err: any) {
@@ -30,6 +43,7 @@ export async function POST(req: NextRequest) {
         complemento: body?.complemento ?? '',
         pontoReferencia: body?.pontoReferencia ?? '',
         observacoes: body?.observacoes ?? '',
+        ativo: body?.ativo ?? true,
       },
     })
     return NextResponse.json(cliente, { status: 201 })

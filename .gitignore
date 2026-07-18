@@ -27,3 +27,6 @@ Thumbs.db
 .idea/
 .vscode/
 
+# Agent tooling
+.abacusai/
+

@@ -3,16 +3,21 @@
 FROM node:20-bookworm-slim AS dependencies
 WORKDIR /app
 
-COPY package.json ./
-RUN npm install --no-audit --no-fund
+COPY package.json package-lock.json ./
+RUN npm ci
+
 
 FROM node:20-bookworm-slim AS builder
 WORKDIR /app
 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates openssl \
+    && rm -rf /var/lib/apt/lists/*
+
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NEXT_OUTPUT_MODE=standalone
 ENV NEXT_OUTPUT_TRACING_ROOT=/app
-ENV DATABASE_URL=postgresql://postgres:postgres@db:5432/piscina_manager
+ENV DATABASE_URL=postgresql://postgres:[REDACTED]@db:5432/piscina_manager
 
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY . .

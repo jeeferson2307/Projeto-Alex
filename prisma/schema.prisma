@@ -19,6 +19,7 @@ model Cliente {
   complemento    String      @default("")
   pontoReferencia String     @default("")
   observacoes    String      @default("")
+  ativo          Boolean     @default(true)
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
   pagamentos     Pagamento[]
@@ -27,13 +28,16 @@ model Cliente {
 }
 
 model Pagamento {
-  id            Int      @id @default(autoincrement())
-  clienteId     Int
-  dataPagamento DateTime
-  valor         Float
-  mesReferencia String
-  createdAt     DateTime @default(now())
-  cliente       Cliente  @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  id              Int      @id @default(autoincrement())
+  clienteId       Int
+  dataPagamento   DateTime
+  valor           Float
+  mesReferencia   String
+  formaPagamento  String   @default("")
+  comprovante     String?
+  comprovanteNome String?
+  createdAt       DateTime @default(now())
+  cliente         Cliente  @relation(fields: [clienteId], references: [id], onDelete: Cascade)
 
   @@map("pagamentos")
 }

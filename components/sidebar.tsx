@@ -2,13 +2,14 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { UserPlus, Users, Calculator, Droplets, Menu, X } from 'lucide-react'
+import { UserPlus, Users, Calculator, Droplets, Menu, X, BarChart3 } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
 
 const navItems = [
   { href: '/', label: 'Cadastro de Clientes', icon: UserPlus },
   { href: '/consulta', label: 'Consulta de Clientes', icon: Users },
+  { href: '/relatorios', label: 'Relatórios', icon: BarChart3 },
   { href: '/calculadora', label: 'Calculadora de Alcalinidade', icon: Calculator },
 ]
 

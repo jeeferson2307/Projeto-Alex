@@ -1,8 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { UserPlus, Users, Calculator, Droplets, Menu, X, BarChart3 } from 'lucide-react'
+import { usePathname, useRouter } from 'next/navigation'
+import { UserPlus, Users, Calculator, Droplets, Menu, X, BarChart3, LogOut } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
 
@@ -15,7 +15,18 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname()
+  const router = useRouter()
   const [open, setOpen] = useState(false)
+
+  if (pathname === '/login') {
+    return null
+  }
+
+  async function handleLogout() {
+    await fetch('/api/logout', { method: 'POST' })
+    router.replace('/login')
+    router.refresh()
+  }
 
   return (
     <>
@@ -78,7 +89,14 @@ export function Sidebar() {
         </nav>
 
         {/* Footer */}
-        <div className="p-4 border-t border-white/20">
+        <div className="p-4 border-t border-white/20 space-y-3">
+          <button
+            onClick={handleLogout}
+            className="flex w-full items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-sm font-medium text-sky-100 hover:bg-white/10 hover:text-white"
+          >
+            <LogOut size={20} />
+            Sair
+          </button>
           <p className="text-xs text-sky-200 text-center">© 2026 Pool Manager</p>
         </div>
       </aside>

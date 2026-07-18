@@ -1,0 +1,40 @@
+generator client {
+    provider = "prisma-client-js"
+    binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
+    output = "/home/ubuntu/piscina_manager/nextjs_space/node_modules/.prisma/client"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model Cliente {
+  id             Int         @id @default(autoincrement())
+  nome           String
+  periodicidade  String
+  valor          Float
+  diaPagamento   Int
+  rua            String      @default("")
+  numero         String      @default("")
+  complemento    String      @default("")
+  pontoReferencia String     @default("")
+  observacoes    String      @default("")
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  pagamentos     Pagamento[]
+
+  @@map("clientes")
+}
+
+model Pagamento {
+  id            Int      @id @default(autoincrement())
+  clienteId     Int
+  dataPagamento DateTime
+  valor         Float
+  mesReferencia String
+  createdAt     DateTime @default(now())
+  cliente       Cliente  @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+
+  @@map("pagamentos")
+}

@@ -66,23 +66,23 @@ export function CadastroClientes() {
   }
 
   return (
-    <div className="p-6 md:p-10 max-w-5xl mx-auto">
+    <div className="mx-auto max-w-5xl px-4 py-6 sm:p-6 md:p-10">
       <FadeIn>
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="bg-primary/10 p-2 rounded-lg">
+        <div className="mb-6 md:mb-8">
+          <div className="mb-2 flex items-start gap-3 sm:items-center">
+            <div className="shrink-0 rounded-lg bg-primary/10 p-2">
               <UserPlus size={28} className="text-primary" />
             </div>
-            <h1 className="font-display text-3xl font-bold tracking-tight text-foreground">Cadastro de Clientes</h1>
+            <h1 className="font-display text-2xl font-bold leading-tight tracking-tight text-foreground sm:text-3xl">Cadastro de Clientes</h1>
           </div>
-          <p className="text-muted-foreground ml-14">Registre novos clientes para o serviço de limpeza de piscinas.</p>
+          <p className="text-sm text-muted-foreground sm:ml-14 sm:text-base">Registre novos clientes para o serviço de limpeza de piscinas.</p>
         </div>
       </FadeIn>
 
       <FadeIn delay={0.1}>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button size="lg" className="gap-2 shadow-md">
+            <Button size="lg" className="w-full gap-2 shadow-md sm:w-auto">
               <Plus size={20} />
               Cadastrar Novo Cliente
             </Button>
@@ -187,11 +187,11 @@ export function CadastroClientes() {
               </div>
 
               {/* Actions */}
-              <div className="flex justify-end gap-3 pt-2">
-                <Button variant="outline" onClick={() => { resetForm(); setOpen(false) }} className="gap-2">
+              <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
+                <Button variant="outline" onClick={() => { resetForm(); setOpen(false) }} className="w-full gap-2 sm:w-auto">
                   <X size={16} /> Cancelar
                 </Button>
-                <Button onClick={handleSubmit} disabled={loading} className="gap-2">
+                <Button onClick={handleSubmit} disabled={loading} className="w-full gap-2 sm:w-auto">
                   <Save size={16} /> {loading ? 'Salvando...' : 'Salvar Cliente'}
                 </Button>
               </div>
@@ -202,22 +202,22 @@ export function CadastroClientes() {
 
       {/* Info cards */}
       <FadeIn delay={0.2}>
-        <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-card rounded-xl p-6 shadow-md border border-border/50">
+        <div className="mt-8 grid grid-cols-1 gap-4 md:mt-10 md:grid-cols-3 md:gap-6">
+          <div className="bg-card rounded-xl p-5 sm:p-6 shadow-md border border-border/50">
             <div className="bg-sky-100 text-sky-600 p-3 rounded-lg w-fit mb-3">
               <UserPlus size={24} />
             </div>
             <h3 className="font-semibold text-lg mb-1">Cadastro Rápido</h3>
             <p className="text-sm text-muted-foreground">Registre clientes com todos os dados necessários de forma simples e organizada.</p>
           </div>
-          <div className="bg-card rounded-xl p-6 shadow-md border border-border/50">
+          <div className="bg-card rounded-xl p-5 sm:p-6 shadow-md border border-border/50">
             <div className="bg-emerald-100 text-emerald-600 p-3 rounded-lg w-fit mb-3">
               <Save size={24} />
             </div>
             <h3 className="font-semibold text-lg mb-1">Dados Seguros</h3>
             <p className="text-sm text-muted-foreground">Informações armazenadas com segurança no banco de dados da plataforma.</p>
           </div>
-          <div className="bg-card rounded-xl p-6 shadow-md border border-border/50">
+          <div className="bg-card rounded-xl p-5 sm:p-6 shadow-md border border-border/50">
             <div className="bg-amber-100 text-amber-600 p-3 rounded-lg w-fit mb-3">
               <Plus size={24} />
             </div>

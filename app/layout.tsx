@@ -43,9 +43,9 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <div className="flex min-h-screen">
+          <div className="flex min-h-screen min-w-0 overflow-x-hidden">
             <Sidebar />
-            <main className="flex-1 overflow-auto">
+            <main className="min-w-0 flex-1 overflow-x-hidden pt-16 md:pt-0">
               {children}
             </main>
           </div>

@@ -63,9 +63,11 @@ export function ConsultaClientes() {
     try {
       const res = await fetch('/api/clientes')
       const data = await res?.json()
-      setClientes(data ?? [])
+      if (!res?.ok) throw new Error(data?.error ?? 'Erro ao carregar clientes')
+      setClientes(Array.isArray(data) ? data : [])
     } catch (err: any) {
       console.error(err)
+      setClientes([])
       toast.error('Erro ao carregar clientes')
     } finally {
       setLoading(false)
@@ -198,16 +200,16 @@ export function ConsultaClientes() {
     : []
 
   return (
-    <div className="p-6 md:p-10 max-w-6xl mx-auto">
+    <div className="mx-auto max-w-6xl px-4 py-6 sm:p-6 md:p-10">
       <FadeIn>
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="bg-primary/10 p-2 rounded-lg">
+        <div className="mb-6 md:mb-8">
+          <div className="mb-2 flex items-start gap-3 sm:items-center">
+            <div className="shrink-0 rounded-lg bg-primary/10 p-2">
               <Users size={28} className="text-primary" />
             </div>
-            <h1 className="font-display text-3xl font-bold tracking-tight text-foreground">Consulta de Clientes</h1>
+            <h1 className="font-display text-2xl font-bold leading-tight tracking-tight text-foreground sm:text-3xl">Consulta de Clientes</h1>
           </div>
-          <p className="text-muted-foreground ml-14">Visualize, edite e gerencie os pagamentos dos seus clientes.</p>
+          <p className="text-sm text-muted-foreground sm:ml-14 sm:text-base">Visualize, edite e gerencie os pagamentos dos seus clientes.</p>
         </div>
       </FadeIn>
 
@@ -238,7 +240,57 @@ export function ConsultaClientes() {
 
       {/* Table */}
       <FadeIn delay={0.15}>
-        <div className="bg-card rounded-xl shadow-md border border-border/50 overflow-hidden">
+        <div className="space-y-3 md:hidden">
+          {loading ? (
+            <div className="rounded-xl border border-border/50 bg-card p-8 text-center text-sm text-muted-foreground shadow-sm">Carregando...</div>
+          ) : (filtered?.length ?? 0) === 0 ? (
+            <div className="rounded-xl border border-border/50 bg-card p-8 text-center text-sm text-muted-foreground shadow-sm">Nenhum cliente encontrado.</div>
+          ) : (
+            filtered?.map((c: Cliente) => (
+              <article key={c?.id} className="rounded-xl border border-border/50 bg-card p-4 shadow-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h2 className="truncate font-semibold text-foreground">{c?.nome}</h2>
+                    <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                      <MapPin size={13} className="shrink-0" />
+                      <span className="truncate">{enderecoResumo(c)}</span>
+                    </p>
+                  </div>
+                  <span className={
+                    'inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-medium ' +
+                    (c?.ativo !== false ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700')
+                  }>
+                    {c?.ativo !== false ? 'Ativo' : 'Inativo'}
+                  </span>
+                </div>
+                <div className="mt-4 grid grid-cols-3 gap-2 rounded-lg bg-muted/50 p-3 text-center">
+                  <div>
+                    <p className="text-[11px] text-muted-foreground">Plano</p>
+                    <p className="mt-0.5 truncate text-xs font-medium">{c?.periodicidade}</p>
+                  </div>
+                  <div className="border-x border-border px-1">
+                    <p className="text-[11px] text-muted-foreground">Valor</p>
+                    <p className="mt-0.5 truncate font-mono text-xs font-semibold">{formatCurrency(c?.valor)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[11px] text-muted-foreground">Vencimento</p>
+                    <p className="mt-0.5 text-xs font-medium">Dia {c?.diaPagamento}</p>
+                  </div>
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <Button size="sm" variant="outline" onClick={() => openEdit(c)} className="w-full gap-1.5">
+                    <Pencil size={14} /> Editar
+                  </Button>
+                  <Button size="sm" variant="secondary" onClick={() => openPagamentos(c)} className="w-full gap-1.5">
+                    <DollarSign size={14} /> Pagamentos
+                  </Button>
+                </div>
+              </article>
+            ))
+          )}
+        </div>
+
+        <div className="hidden overflow-hidden rounded-xl border border-border/50 bg-card shadow-md md:block">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -383,9 +435,9 @@ export function ConsultaClientes() {
               <Label>Observações ({(editForm?.observacoes ?? '').length}/200)</Label>
               <Textarea maxLength={200} value={editForm?.observacoes ?? ''} onChange={(e: any) => setEditForm((p: any) => ({ ...(p ?? {}), observacoes: e?.target?.value ?? '' }))} rows={3} />
             </div>
-            <div className="flex justify-end gap-3 pt-2">
-              <Button variant="outline" onClick={() => setEditOpen(false)} className="gap-2"><X size={16} /> Cancelar</Button>
-              <Button onClick={saveEdit} disabled={savingEdit} className="gap-2"><Save size={16} /> {savingEdit ? 'Salvando...' : 'Salvar Alterações'}</Button>
+            <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
+              <Button variant="outline" onClick={() => setEditOpen(false)} className="w-full gap-2 sm:w-auto"><X size={16} /> Cancelar</Button>
+              <Button onClick={saveEdit} disabled={savingEdit} className="w-full gap-2 sm:w-auto"><Save size={16} /> {savingEdit ? 'Salvando...' : 'Salvar Alterações'}</Button>
             </div>
           </div>
         </DialogContent>
@@ -404,7 +456,7 @@ export function ConsultaClientes() {
           {/* Novo pagamento */}
           <div className="bg-muted/50 rounded-lg p-4 space-y-3 mt-4">
             <h3 className="font-semibold text-sm flex items-center gap-2"><Plus size={16} /> Lançar Novo Pagamento</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
               <div className="space-y-1">
                 <Label className="text-xs">Ano</Label>
                 <Select value={pagForm?.ano ?? ''} onValueChange={(v: string) => setPagForm((p: any) => ({ ...(p ?? {}), ano: v }))}>
@@ -469,7 +521,7 @@ export function ConsultaClientes() {
                 </div>
               </div>
             </div>
-            <Button size="sm" onClick={savePagamento} disabled={savingPag} className="gap-2">
+            <Button size="sm" onClick={savePagamento} disabled={savingPag} className="w-full gap-2 sm:w-auto">
               <Save size={14} /> {savingPag ? 'Salvando...' : 'Registrar Pagamento'}
             </Button>
           </div>
@@ -480,8 +532,8 @@ export function ConsultaClientes() {
             {(selectedPagamentos?.length ?? 0) === 0 ? (
               <p className="text-sm text-muted-foreground py-4 text-center">Nenhum pagamento registrado.</p>
             ) : (
-              <div className="rounded-lg border border-border overflow-hidden">
-                <table className="w-full text-sm">
+              <div className="overflow-x-auto rounded-lg border border-border">
+                <table className="min-w-[620px] w-full text-sm">
                   <thead>
                     <tr className="bg-muted/50">
                       <th className="text-left p-3 font-semibold">Mês/Ano</th>

@@ -40,9 +40,11 @@ export function Relatorios() {
     try {
       const res = await fetch('/api/clientes')
       const data = await res?.json()
-      setClientes(data ?? [])
+      if (!res?.ok) throw new Error(data?.error ?? 'Erro ao carregar relatórios')
+      setClientes(Array.isArray(data) ? data : [])
     } catch (err: any) {
       console.error(err)
+      setClientes([])
       toast.error('Erro ao carregar dados dos relatórios')
     } finally {
       setLoading(false)
@@ -132,24 +134,24 @@ export function Relatorios() {
     })
 
   return (
-    <div className="p-6 md:p-10 max-w-6xl mx-auto">
+    <div className="mx-auto max-w-6xl px-4 py-6 sm:p-6 md:p-10">
       <FadeIn>
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="bg-primary/10 p-2 rounded-lg">
+        <div className="mb-6 md:mb-8">
+          <div className="mb-2 flex items-start gap-3 sm:items-center">
+            <div className="shrink-0 rounded-lg bg-primary/10 p-2">
               <BarChart3 size={28} className="text-primary" />
             </div>
-            <h1 className="font-display text-3xl font-bold tracking-tight text-foreground">Relatórios</h1>
+            <h1 className="font-display text-2xl font-bold leading-tight tracking-tight text-foreground sm:text-3xl">Relatórios</h1>
           </div>
-          <p className="text-muted-foreground ml-14">Visão geral financeira e de clientes do seu negócio.</p>
+          <p className="text-sm text-muted-foreground sm:ml-14 sm:text-base">Visão geral financeira e de clientes do seu negócio.</p>
         </div>
       </FadeIn>
 
       {/* Cards */}
       <FadeIn delay={0.1}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 md:mb-8 lg:grid-cols-3 lg:gap-6">
           {cards.map((card: any) => (
-            <div key={card.label} className="bg-card rounded-xl p-6 shadow-md border border-border/50">
+            <div key={card.label} className="bg-card rounded-xl p-5 sm:p-6 shadow-md border border-border/50">
               <div className={`${card.bg} ${card.color} p-3 rounded-lg w-fit mb-4`}>
                 <card.icon size={24} />
               </div>
@@ -165,10 +167,11 @@ export function Relatorios() {
 
       {/* Gráfico */}
       <FadeIn delay={0.2}>
-        <div className="bg-card rounded-xl p-6 shadow-md border border-border/50">
+        <div className="rounded-xl border border-border/50 bg-card p-4 shadow-md sm:p-6">
           <h2 className="font-display text-lg font-bold mb-1">Faturamento Mensal — {anoAtual}</h2>
           <p className="text-sm text-muted-foreground mb-6">Comparativo entre o valor esperado (contratado) e o realizado (recebido).</p>
-          <div className="w-full h-[360px]">
+          <div className="w-full overflow-x-auto pb-2">
+            <div className="h-[320px] min-w-[620px] md:h-[360px] md:min-w-0">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
@@ -197,16 +200,57 @@ export function Relatorios() {
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
+            </div>
           </div>
         </div>
       </FadeIn>
 
       {/* Tabela de clientes */}
       <FadeIn delay={0.3}>
-        <div className="bg-card rounded-xl p-6 shadow-md border border-border/50 mt-8">
+        <div className="mt-6 rounded-xl border border-border/50 bg-card p-4 shadow-md sm:p-6 md:mt-8">
           <h2 className="font-display text-lg font-bold mb-1">Situação por Cliente</h2>
           <p className="text-sm text-muted-foreground mb-6">Status, débitos e histórico do último pagamento de cada cliente.</p>
-          <div className="w-full overflow-x-auto">
+          <div className="space-y-3 md:hidden">
+            {loading ? (
+              <p className="py-6 text-center text-sm text-muted-foreground">Carregando...</p>
+            ) : linhas.length === 0 ? (
+              <p className="py-6 text-center text-sm text-muted-foreground">Nenhum cliente cadastrado.</p>
+            ) : (
+              linhas.map((l: any) => (
+                <article key={l.id} className="rounded-lg border border-border/60 bg-muted/20 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <h3 className="min-w-0 truncate font-semibold text-foreground">{l.nome}</h3>
+                    <span className={`inline-flex shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${l.ativo ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}`}>
+                      {l.ativo ? 'Ativo' : 'Inativo'}
+                    </span>
+                  </div>
+                  <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+                    <div>
+                      <dt className="text-xs text-muted-foreground">Vencimento</dt>
+                      <dd className="mt-0.5 font-medium">Dia {l.diaPagamento ?? '—'}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs text-muted-foreground">Débito atual</dt>
+                      <dd className="mt-0.5">
+                        <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${l.temDebito ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                          {l.temDebito ? 'Sim' : 'Não'}
+                        </span>
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs text-muted-foreground">Último valor</dt>
+                      <dd className="mt-0.5 font-medium">{l.ultimoValor != null ? formatCurrency(l.ultimoValor) : '—'}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs text-muted-foreground">Último pagamento</dt>
+                      <dd className="mt-0.5 font-medium">{formatDate(l.ultimaData)}</dd>
+                    </div>
+                  </dl>
+                </article>
+              ))
+            )}
+          </div>
+          <div className="hidden w-full overflow-x-auto md:block">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-muted-foreground">

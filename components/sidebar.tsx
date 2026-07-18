@@ -30,19 +30,31 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Mobile toggle */}
-      <button
-        onClick={() => setOpen(!open)}
-        className="fixed top-4 left-4 z-50 md:hidden bg-primary text-primary-foreground p-2 rounded-lg shadow-lg"
-        aria-label="Menu"
-      >
-        {open ? <X size={20} /> : <Menu size={20} />}
-      </button>
+      {/* Mobile header */}
+      <header className="fixed inset-x-0 top-0 z-40 flex h-16 items-center justify-between border-b border-sky-700/30 bg-gradient-to-r from-sky-600 to-blue-700 px-4 text-white shadow-md md:hidden">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <div className="rounded-lg bg-white/20 p-1.5">
+            <Droplets size={24} />
+          </div>
+          <div className="min-w-0">
+            <p className="truncate font-display text-sm font-bold">Alex Piscinas</p>
+            <p className="text-[11px] text-sky-100">Gestão de Piscinas</p>
+          </div>
+        </div>
+        <button
+          onClick={() => setOpen(!open)}
+          className="rounded-lg bg-white/15 p-2.5 transition-colors hover:bg-white/25"
+          aria-label={open ? 'Fechar menu' : 'Abrir menu'}
+          aria-expanded={open}
+        >
+          {open ? <X size={22} /> : <Menu size={22} />}
+        </button>
+      </header>
 
       {/* Overlay mobile */}
       {open && (
         <div
-          className="fixed inset-0 bg-black/40 z-30 md:hidden"
+          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-[1px] md:hidden"
           onClick={() => setOpen(false)}
         />
       )}
@@ -50,7 +62,7 @@ export function Sidebar() {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed md:sticky top-0 left-0 z-40 h-screen w-64 bg-gradient-to-b from-sky-600 to-blue-700 text-white flex flex-col transition-transform duration-300',
+          'fixed left-0 top-0 z-50 flex h-[100dvh] w-[min(82vw,18rem)] flex-col bg-gradient-to-b from-sky-600 to-blue-700 text-white shadow-2xl transition-transform duration-300 md:sticky md:z-40 md:h-screen md:w-64 md:shadow-none',
           open ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         )}
       >

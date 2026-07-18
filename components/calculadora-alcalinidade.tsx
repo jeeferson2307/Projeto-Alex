@@ -43,20 +43,20 @@ export function CalculadoraAlcalinidade() {
   }
 
   return (
-    <div className="p-6 md:p-10 max-w-5xl mx-auto">
+    <div className="mx-auto max-w-5xl px-4 py-6 sm:p-6 md:p-10">
       <FadeIn>
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="bg-primary/10 p-2 rounded-lg">
+        <div className="mb-6 md:mb-8">
+          <div className="mb-2 flex items-start gap-3 sm:items-center">
+            <div className="shrink-0 rounded-lg bg-primary/10 p-2">
               <Calculator size={28} className="text-primary" />
             </div>
-            <h1 className="font-display text-3xl font-bold tracking-tight text-foreground">Calculadora de Alcalinidade</h1>
+            <h1 className="font-display text-2xl font-bold leading-tight tracking-tight text-foreground sm:text-3xl">Calculadora de Alcalinidade</h1>
           </div>
-          <p className="text-muted-foreground ml-14">Calcule a quantidade de produto elevador de alcalinidade necessária para sua piscina.</p>
+          <p className="text-sm text-muted-foreground sm:ml-14 sm:text-base">Calcule a quantidade de produto elevador de alcalinidade necessária para sua piscina.</p>
         </div>
       </FadeIn>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-8">
         {/* Inputs */}
         <FadeIn delay={0.1}>
           <Card className="shadow-md">
@@ -121,7 +121,7 @@ export function CalculadoraAlcalinidade() {
                 <p className="text-xs text-muted-foreground">Faixa ideal: 80 a 120 ppm</p>
               </div>
 
-              <div className="flex gap-3 pt-2">
+              <div className="flex flex-col gap-3 pt-2 sm:flex-row">
                 <Button onClick={calcular} className="gap-2 flex-1">
                   <Calculator size={16} /> Calcular
                 </Button>
@@ -146,7 +146,7 @@ export function CalculadoraAlcalinidade() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
                       <div className="bg-white dark:bg-card rounded-lg p-4 shadow-sm text-center">
                         <p className="text-xs text-muted-foreground mb-1">Produto Necessário</p>
                         <p className="text-2xl font-bold font-mono text-primary">{resultado?.gramas?.toFixed?.(1) ?? '0'} g</p>

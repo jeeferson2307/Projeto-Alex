@@ -3,9 +3,13 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const id = parseInt(params?.id ?? '0')
+    const { id: rawId } = await params
+    const id = parseInt(rawId ?? '0')
     if (!id) return NextResponse.json({ error: 'ID inválido' }, { status: 400 })
 
     const pagamento = await prisma.pagamento.findUnique({
@@ -27,7 +31,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     const buffer = Buffer.from(match[2] ?? '', 'base64')
     const nome = pagamento.comprovanteNome ?? `comprovante-${id}`
 
-    return new NextResponse(buffer, {
+    return new NextResponse(new Uint8Array(buffer), {
       status: 200,
       headers: {
         'Content-Type': mime,

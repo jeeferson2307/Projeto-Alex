@@ -3,9 +3,12 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+type RouteContext = { params: Promise<{ id: string }> }
+
+export async function PUT(req: NextRequest, { params }: RouteContext) {
   try {
-    const id = parseInt(params?.id ?? '0')
+    const { id: rawId } = await params
+    const id = parseInt(rawId ?? '0')
     if (!id) return NextResponse.json({ error: 'ID inválido' }, { status: 400 })
     const body = await req.json()
     const cliente = await prisma.cliente.update({
@@ -30,9 +33,10 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: RouteContext) {
   try {
-    const id = parseInt(params?.id ?? '0')
+    const { id: rawId } = await params
+    const id = parseInt(rawId ?? '0')
     if (!id) return NextResponse.json({ error: 'ID inválido' }, { status: 400 })
     await prisma.cliente.delete({ where: { id } })
     return NextResponse.json({ success: true })

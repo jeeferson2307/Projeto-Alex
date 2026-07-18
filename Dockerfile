@@ -4,8 +4,7 @@ FROM node:20-bookworm-slim AS dependencies
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-RUN npm ci
-
+RUN npm ci --legacy-peer-deps
 
 FROM node:20-bookworm-slim AS builder
 WORKDIR /app
@@ -17,7 +16,7 @@ RUN apt-get update \
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NEXT_OUTPUT_MODE=standalone
 ENV NEXT_OUTPUT_TRACING_ROOT=/app
-ENV DATABASE_URL=postgresql://postgres:[REDACTED]@db:5432/piscina_manager
+ENV DATABASE_URL=postgresql://postgres:postgres@database:5432/piscina_manager
 
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY . .

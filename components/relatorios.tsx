@@ -5,13 +5,14 @@ import { BarChart3, Users, DollarSign, TrendingUp, AlertCircle } from 'lucide-re
 import { toast } from 'sonner'
 import { FadeIn } from '@/components/ui/animate'
 import {
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LabelList,
 } from 'recharts'
 
 interface Pagamento {
   id: number
   valor: number
   mesReferencia: string
+  dataPagamento: string
 }
 
 interface Cliente {
@@ -19,6 +20,7 @@ interface Cliente {
   nome: string
   valor: number
   ativo: boolean
+  diaPagamento: number
   pagamentos: Pagamento[]
 }
 
@@ -77,11 +79,38 @@ export function Relatorios() {
   })
 
   const cards = [
-    { label: 'Clientes Ativos', value: String(ativos.length), icon: Users, color: 'text-sky-600', bg: 'bg-sky-100' },
     { label: 'Valor Total Contratado', value: formatCurrency(totalContratado), icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-100' },
     { label: 'Valor Médio Contratado', value: formatCurrency(medioContratado), icon: TrendingUp, color: 'text-violet-600', bg: 'bg-violet-100' },
     { label: 'Pagamentos Pendentes', value: String(pendentes.length), icon: AlertCircle, color: 'text-amber-600', bg: 'bg-amber-100', hint: `Referente a ${refMesAtual}` },
   ]
+
+  const formatDate = (iso?: string) => {
+    if (!iso) return '—'
+    const d = new Date(iso)
+    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR')
+  }
+
+  const linhas = [...(clientes ?? [])]
+    .sort((a: Cliente, b: Cliente) => (a?.nome ?? '').localeCompare(b?.nome ?? ''))
+    .map((c: Cliente) => {
+      const pagamentos = [...(c?.pagamentos ?? [])].sort(
+        (a: Pagamento, b: Pagamento) =>
+          new Date(b?.dataPagamento).getTime() - new Date(a?.dataPagamento).getTime()
+      )
+      const ultimo = pagamentos[0]
+      const temDebito = !(c?.pagamentos ?? []).some(
+        (p: Pagamento) => p?.mesReferencia === refMesAtual
+      )
+      return {
+        id: c?.id,
+        nome: c?.nome ?? '—',
+        ativo: c?.ativo !== false,
+        diaPagamento: c?.diaPagamento,
+        temDebito,
+        ultimoValor: ultimo?.valor,
+        ultimaData: ultimo?.dataPagamento,
+      }
+    })
 
   return (
     <div className="p-6 md:p-10 max-w-6xl mx-auto">
@@ -131,10 +160,72 @@ export function Relatorios() {
                 />
                 <Tooltip formatter={(v: any) => formatCurrency(Number(v))} />
                 <Legend />
-                <Bar dataKey="Esperado" fill="#0ea5e9" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="Realizado" fill="#10b981" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Esperado" fill="#0ea5e9" radius={[4, 4, 0, 0]}>
+                  <LabelList
+                    dataKey="Esperado"
+                    position="top"
+                    fontSize={10}
+                    formatter={(v: number) => (v > 0 ? new Intl.NumberFormat('pt-BR', { notation: 'compact' }).format(v) : '')}
+                  />
+                </Bar>
+                <Bar dataKey="Realizado" fill="#10b981" radius={[4, 4, 0, 0]}>
+                  <LabelList
+                    dataKey="Realizado"
+                    position="top"
+                    fontSize={10}
+                    formatter={(v: number) => (v > 0 ? new Intl.NumberFormat('pt-BR', { notation: 'compact' }).format(v) : '')}
+                  />
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
+          </div>
+        </div>
+      </FadeIn>
+
+      {/* Tabela de clientes */}
+      <FadeIn delay={0.3}>
+        <div className="bg-card rounded-xl p-6 shadow-md border border-border/50 mt-8">
+          <h2 className="font-display text-lg font-bold mb-1">Situação por Cliente</h2>
+          <p className="text-sm text-muted-foreground mb-6">Status, débitos e histórico do último pagamento de cada cliente.</p>
+          <div className="w-full overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-left text-muted-foreground">
+                  <th className="py-3 pr-4 font-medium">Nome Cliente</th>
+                  <th className="py-3 pr-4 font-medium">Status</th>
+                  <th className="py-3 pr-4 font-medium">Dia de Pagamento</th>
+                  <th className="py-3 pr-4 font-medium">Débitos</th>
+                  <th className="py-3 pr-4 font-medium">Último Valor Pago</th>
+                  <th className="py-3 pr-4 font-medium">Última Data de Pagamento</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr><td colSpan={6} className="py-6 text-center text-muted-foreground">Carregando...</td></tr>
+                ) : linhas.length === 0 ? (
+                  <tr><td colSpan={6} className="py-6 text-center text-muted-foreground">Nenhum cliente cadastrado.</td></tr>
+                ) : (
+                  linhas.map((l: any) => (
+                    <tr key={l.id} className="border-b border-border/50 last:border-0">
+                      <td className="py-3 pr-4 font-medium text-foreground">{l.nome}</td>
+                      <td className="py-3 pr-4">
+                        <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${l.ativo ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}`}>
+                          {l.ativo ? 'Ativo' : 'Inativo'}
+                        </span>
+                      </td>
+                      <td className="py-3 pr-4">{l.diaPagamento ?? '—'}</td>
+                      <td className="py-3 pr-4">
+                        <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${l.temDebito ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                          {l.temDebito ? 'Sim' : 'Não'}
+                        </span>
+                      </td>
+                      <td className="py-3 pr-4">{l.ultimoValor != null ? formatCurrency(l.ultimoValor) : '—'}</td>
+                      <td className="py-3 pr-4">{formatDate(l.ultimaData)}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       </FadeIn>

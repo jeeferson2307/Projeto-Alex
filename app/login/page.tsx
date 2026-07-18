@@ -45,7 +45,7 @@ export default function LoginPage() {
             <Droplets size={36} className="text-white" />
           </div>
           <div className="text-center">
-            <h1 className="font-display text-2xl font-bold text-slate-800">Pool Manager</h1>
+            <h1 className="font-display text-2xl font-bold text-slate-800">Alex Piscinas</h1>
             <p className="text-sm text-slate-500">Gestão de Piscinas</p>
           </div>
         </div>

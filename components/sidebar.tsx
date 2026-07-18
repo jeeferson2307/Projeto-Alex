@@ -60,7 +60,7 @@ export function Sidebar() {
             <Droplets size={28} className="text-white" />
           </div>
           <div>
-            <h1 className="font-display text-lg font-bold tracking-tight">Pool Manager</h1>
+            <h1 className="font-display text-lg font-bold tracking-tight">Alex Piscinas</h1>
             <p className="text-xs text-sky-200">Gestão de Piscinas</p>
           </div>
         </div>
@@ -97,7 +97,7 @@ export function Sidebar() {
             <LogOut size={20} />
             Sair
           </button>
-          <p className="text-xs text-sky-200 text-center">© 2026 Pool Manager</p>
+          <p className="text-xs text-sky-200 text-center">© 2026 Alex Piscinas</p>
         </div>
       </aside>
     </>

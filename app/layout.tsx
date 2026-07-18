@@ -13,7 +13,7 @@ const jetbrainsMono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mon
 
 export const metadata = {
   metadataBase: new URL(process.env.NEXTAUTH_URL || 'http://localhost:3000'),
-  title: 'Pool Manager - Gerenciador de Piscinas',
+  title: 'Alex Piscinas - Gerenciador de Piscinas',
   description: 'Sistema de gerenciamento de clientes e serviços de limpeza de piscinas',
   icons: {
     icon: '/favicon.svg',

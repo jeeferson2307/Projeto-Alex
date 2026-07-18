@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { BarChart3, Users, DollarSign, TrendingUp, AlertCircle } from 'lucide-react'
+import { BarChart3, DollarSign, TrendingUp, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { FadeIn } from '@/components/ui/animate'
 import {
@@ -21,6 +21,7 @@ interface Cliente {
   valor: number
   ativo: boolean
   diaPagamento: number
+  createdAt: string
   pagamentos: Pagamento[]
 }
 
@@ -58,22 +59,39 @@ export function Relatorios() {
   const medioContratado = ativos.length > 0 ? totalContratado / ativos.length : 0
 
   const anoAtual = new Date().getFullYear()
-  const mesAtualNome = MESES[new Date().getMonth()]
+  const mesAtual = new Date().getMonth()
+  const mesAtualNome = MESES[mesAtual]
   const refMesAtual = `${mesAtualNome}/${anoAtual}`
 
-  const pendentes = ativos.filter((c: Cliente) =>
-    !(c?.pagamentos ?? []).some((p: Pagamento) => p?.mesReferencia === refMesAtual)
+  const clienteCriadoAteOMes = (cliente: Cliente, indiceMes: number) => {
+    const dataCriacao = new Date(cliente?.createdAt)
+
+    if (Number.isNaN(dataCriacao.getTime())) return false
+
+    const inicioMesSeguinte = new Date(anoAtual, indiceMes + 1, 1)
+    return dataCriacao < inicioMesSeguinte
+  }
+
+  const pendentes = ativos.filter(
+    (c: Cliente) =>
+      clienteCriadoAteOMes(c, mesAtual) &&
+      !(c?.pagamentos ?? []).some((p: Pagamento) => p?.mesReferencia === refMesAtual)
   )
 
   const chartData = MESES.map((mes: string, i: number) => {
     const ref = `${mes}/${anoAtual}`
-    const realizado = (clientes ?? []).reduce((acc: number, c: Cliente) => {
+    const clientesAtivosNoMes = ativos.filter((c: Cliente) => clienteCriadoAteOMes(c, i))
+    const esperado = clientesAtivosNoMes.reduce(
+      (acc: number, c: Cliente) => acc + (c?.valor ?? 0),
+      0
+    )
+    const realizado = clientesAtivosNoMes.reduce((acc: number, c: Cliente) => {
       const doMes = (c?.pagamentos ?? []).filter((p: Pagamento) => p?.mesReferencia === ref)
       return acc + doMes.reduce((s: number, p: Pagamento) => s + (p?.valor ?? 0), 0)
     }, 0)
     return {
       mes: MESES_CURTOS[i],
-      Esperado: Number(totalContratado.toFixed(2)),
+      Esperado: Number(esperado.toFixed(2)),
       Realizado: Number(realizado.toFixed(2)),
     }
   })
@@ -98,9 +116,10 @@ export function Relatorios() {
           new Date(b?.dataPagamento).getTime() - new Date(a?.dataPagamento).getTime()
       )
       const ultimo = pagamentos[0]
-      const temDebito = !(c?.pagamentos ?? []).some(
-        (p: Pagamento) => p?.mesReferencia === refMesAtual
-      )
+      const temDebito =
+        c?.ativo !== false &&
+        clienteCriadoAteOMes(c, mesAtual) &&
+        !(c?.pagamentos ?? []).some((p: Pagamento) => p?.mesReferencia === refMesAtual)
       return {
         id: c?.id,
         nome: c?.nome ?? '—',
